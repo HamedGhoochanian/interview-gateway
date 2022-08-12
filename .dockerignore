@@ -1,0 +1,8 @@
+node_modules/
+test/
+dist/
+.gitignore
+.prettierrc
+README.md
+*.log
+tsconfig.spec.json

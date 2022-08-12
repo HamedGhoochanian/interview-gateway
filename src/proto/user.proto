@@ -42,7 +42,7 @@ message UserData {
 
 message UserList {
   repeated UserData data = 1;
-  uint64 count = 2;
+  int32 count = 2;
 }
 
 

@@ -43,6 +43,7 @@ export class UsersService implements OnModuleInit {
     const data = await lastValueFrom(this.userGrpc.listUsers(payload)).catch(
       UsersService.catchError,
     );
+    console.log(data);
     return plainToInstance(UserListDto, data, {
       excludeExtraneousValues: true,
     });

@@ -15,6 +15,7 @@ import { UserListDto, UserResponseDto } from './dto/user-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { UserUpdateDto } from './dto/user-update.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { UserCreateDto } from './dto/user-create.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -24,7 +25,7 @@ export class UsersController {
   @Post()
   @ApiOperation({})
   @ApiResponse({ type: UserResponseDto })
-  public createUser(@Body() body: any) {
+  public createUser(@Body() body: UserCreateDto) {
     return this.usersService.createUser(body);
   }
 
