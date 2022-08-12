@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package user;
+
+service UserService{
+  rpc createUser(CreateUser) returns (UserData) {}
+  rpc fetchUser(ID) returns (UserData) {}
+  rpc deleteUser(ID) returns (Void) {}
+  rpc listUsers(Pagination) returns (UserList) {}
+  rpc updateUser(UpdateUser) returns (UserData) {}
+}
+
+message CreateUser {
+  string name = 1;
+  string email = 2;
+  string birthday = 3;
+}
+
+message UpdateUser {
+  string id = 1;
+  optional string name = 2;
+  optional string email = 3;
+  optional string birthday = 4;
+}
+
+message ID {
+  string id = 1;
+}
+
+message Pagination {
+  optional uint32 skip = 1;
+  optional uint32 limit = 2;
+}
+
+message UserData {
+  string _id = 1;
+  string name = 2;
+  string email = 3;
+  string birthday = 4;
+  string createdAt = 5;
+}
+
+message UserList {
+  repeated UserData data = 1;
+  uint64 count = 2;
+}
+
+
+message Void {}
+

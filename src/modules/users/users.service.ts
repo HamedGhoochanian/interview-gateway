@@ -1,64 +1,81 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import * as crypto from 'crypto';
-import { User } from './user.interface';
+import { UserCreateDto } from './dto/user-create.dto';
 import { plainToInstance } from 'class-transformer';
-import { UserResponseDto } from './dto/user-response.dto';
+import { UserListDto, UserResponseDto } from './dto/user-response.dto';
+import { ClientGrpc } from '@nestjs/microservices';
+import { UserGrpc } from './user-grpc.interface';
+import { lastValueFrom } from 'rxjs';
+import { GrpcStatus } from '../../enum/grpc-status.enum';
+import { UserUpdateDto } from './dto/user-update.dto';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Injectable()
-export class UsersService {
-  private static readonly users: User[] = [];
+export class UsersService implements OnModuleInit {
+  @Inject('user_package') private client: ClientGrpc;
+  private userGrpc: UserGrpc;
 
-  public createUser(payload: CreateUserDto) {
-    const randomId = UsersService.generateId();
-    UsersService.users.push({
-      _id: randomId,
-      birthday: new Date(payload.birthday),
-      name: payload.name,
-      email: payload.email,
-      isDeleted: false,
-    });
+  onModuleInit() {
+    this.userGrpc = this.client.getService<UserGrpc>('UserService');
   }
 
-  public deleteUser(_id: string) {
-    const user = UsersService.users.find(
-      (u) => u._id === _id && u.isDeleted === false,
+  public async createUser(payload: UserCreateDto) {
+    const user = await lastValueFrom(this.userGrpc.createUser(payload)).catch(
+      UsersService.catchError,
     );
-    if (!user) {
-      throw new BadRequestException();
-    }
-    user.isDeleted = true;
-  }
-
-  public listUsers(): UserResponseDto[] {
-    const users = UsersService.users.filter((u) => u.isDeleted === false);
-    return plainToInstance(UserResponseDto, users, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  public fetchUser(_id: string): UserResponseDto {
-    const user = UsersService.users.find(
-      (u) => u._id === _id && u.isDeleted === false,
-    );
-    if (!user) {
-      throw new NotFoundException();
-    }
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
     });
   }
 
-  private static generateId() {
-    while (true) {
-      const randomId = crypto.randomBytes(12).toString('hex');
-      const existingUser = UsersService.users.find((u) => u._id === randomId);
-      if (!existingUser) {
-        return randomId;
+  public async deleteUser(id: string) {
+    await lastValueFrom(this.userGrpc.deleteUser({ id: id })).catch(
+      UsersService.catchError,
+    );
+  }
+
+  public async listUsers(payload: PaginationDto): Promise<any> {
+    const data = await lastValueFrom(this.userGrpc.listUsers(payload)).catch(
+      UsersService.catchError,
+    );
+    return plainToInstance(UserListDto, data, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  public async fetchUser(id: string): Promise<UserResponseDto> {
+    const user = await lastValueFrom(this.userGrpc.fetchUser({ id })).catch(
+      UsersService.catchError,
+    );
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  public async updateUser(id: string, payload: UserUpdateDto) {
+    const result = await lastValueFrom(
+      this.userGrpc.updateUser({ id, ...payload }),
+    );
+    return plainToInstance(UserResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  private static catchError(e) {
+    {
+      const code = e?.code as number;
+      switch (code) {
+        case GrpcStatus.NOT_FOUND:
+          throw new NotFoundException();
+        case GrpcStatus.INVALID_ARGUMENT:
+          throw new BadRequestException(e?.details.split(','));
+        default:
+          throw e;
       }
     }
   }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -14,7 +14,21 @@ export class UserResponseDto {
   @ApiProperty({ example: 'abbas@gmail.com' })
   @Expose()
   email: string;
-  @ApiProperty({ example: '2000-01-04T00:00:00.000Z' })
+  @ApiProperty({ example: '2000-01-04' })
   @Expose()
-  birthday: Date;
+  birthday: string;
+  @ApiProperty({ example: '2022-01-04T00:00:00.000Z' })
+  @Expose()
+  createdAt: string;
+}
+
+export class UserListDto {
+  @ApiProperty({ type: UserResponseDto, isArray: true })
+  @Expose()
+  @Type(() => UserResponseDto)
+  data: UserResponseDto[];
+
+  @ApiProperty()
+  @Expose()
+  count: number;
 }
